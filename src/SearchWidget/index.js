@@ -30,6 +30,7 @@ export const PickupLocationInput = glamorous.input({
 const SearchWidget = ({
     locationFilter,
     locations,
+    isLoadingLocations,
     onPickupLocationChange
 }) => (
   <SearchWidgetContainer>
@@ -43,13 +44,19 @@ const SearchWidget = ({
       value={locationFilter}
       onChange={(event) => onPickupLocationChange(event.target.value)}
     />
-    <PickupLocationList locations={locations} />
+    {
+        isLoadingLocations
+            ? <span>Loading...</span>
+            : <PickupLocationList locations={locations} />
+    }
   </SearchWidgetContainer>
 );
 
 SearchWidget.propTypes = {
     locationFilter: PropTypes.string,
     locations: PropTypes.array.isRequired,
+    isLoadingLocations: PropTypes.bool.isRequired,
+    onPickupLocationChange: PropTypes.func.isRequired,
 };
 
 export default SearchWidget;
