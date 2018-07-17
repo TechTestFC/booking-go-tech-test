@@ -1,53 +1,33 @@
-import React, {Component} from 'react';
-import axios from 'axios';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux'
+import { createStructuredSelector } from 'reselect';
 import SearchWidget from './SearchWidget'
-import { getLocationsReadableFormat } from './utils/locations-utils';
+import {
+    makeSelectLocationFilter,
+    makeSelectLocations,
+    makeSelectIsLoadingLocations,
+} from './store/selectors';
+
+import {
+    setLocationFilter,
+    getLocations,
+} from './store/actions';
 
 class App extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            locationFilter: '',
-            locations: [],
-            isLoadingLocations: false,
-        };
-    }
-
-    getLocations(locationFilter) {
-        this.setState({ isLoadingLocations: true });
-        const numberOfResults = 6;
-        const url = `https://cors.io/?https://www.rentalcars.com/FTSAutocomplete.do?solrIndex=fts_en&solrRows=${numberOfResults}&solrTerm=${locationFilter}`
-        axios.get(url)
-            .then((response) => {
-                const locations = getLocationsReadableFormat(response.data.results.docs);
-                this.setState({locations, isLoadingLocations: false });
-            })
-            .catch(() => {
-                this.setState({locations: [], isLoadingLocations: false });
-            });
-    }
 
     onPickupLocationChange(locationFilter) {
-        if (locationFilter.length > 1) {
-            // debounce
-            if (this.state.locationQueryTimeoutId) {
-                clearTimeout(this.state.locationQueryTimeoutId);
-            }
-            const locationQueryTimeoutId = setTimeout(() => { this.getLocations(locationFilter); }, 500);
-            this.setState({locationQueryTimeoutId});
-        } else {
-            this.setState({locations:[]});
-        }
-        this.setState({locationFilter});
+        this.props.setLocationFilter(locationFilter);
+        this.props.getLocations();
     }
 
     render() {
         return (
             <div className="App">
                 <SearchWidget
-                    locationFilter={this.state.locationFilter}
-                    locations={this.state.locations}
-                    isLoadingLocations={this.state.isLoadingLocations}
+                    locationFilter={this.props.locationFilter}
+                    locations={this.props.locations}
+                    isLoadingLocations={this.props.isLoadingLocations}
                     onPickupLocationChange={(location) => this.onPickupLocationChange(location)}
                 />
             </div>
@@ -55,4 +35,28 @@ class App extends Component {
     }
 }
 
-export default App;
+const mapStateToProps = createStructuredSelector({
+    locationFilter: makeSelectLocationFilter,
+    locations: makeSelectLocations,
+    isLoadingLocations: makeSelectIsLoadingLocations,
+});
+
+const mapDispatchToProps = (dispatch) => ({
+    setLocationFilter: (locationFilter) => dispatch(setLocationFilter(locationFilter)),
+    getLocations: () => dispatch(getLocations()),
+});
+
+App.propTypes = {
+    locationFilter: PropTypes.string.isRequired,
+    locations: PropTypes.array.isRequired,
+    isLoadingLocations: PropTypes.bool.isRequired,
+    setLocationFilter: PropTypes.func.isRequired,
+    getLocations: PropTypes.func.isRequired,
+};
+
+const connectedApp = connect(
+    mapStateToProps,
+    mapDispatchToProps,
+)(App);
+
+export default connectedApp;
